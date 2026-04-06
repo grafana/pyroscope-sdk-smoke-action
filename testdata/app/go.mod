@@ -2,7 +2,7 @@ module smoke-test-app
 
 go 1.23.0
 
-require github.com/grafana/pyroscope-go v1.2.7
+require github.com/grafana/pyroscope-go v1.2.8
 
 require (
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.9 // indirect
