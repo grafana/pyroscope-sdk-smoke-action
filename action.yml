@@ -51,18 +51,18 @@ runs:
         fi
 
     - name: Cache Go modules
-      uses: actions/cache@v4
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
         path: |
           ~/go/pkg/mod
           ~/.cache/go/build
-        key: ${{ runner.os }}-querier-${{ hashFiles('**/querier/go.sum') }}
-        restore-keys: ${{ runner.os }}-querier-
+        key: ${{ runner.os }}-fetch-${{ hashFiles('go.sum') }}
+        restore-keys: ${{ runner.os }}-fetch-
 
-    - name: Build querier
+    - name: Build fetch
       shell: bash
       run: |
-        cd ${{ github.action_path }}/querier && go build -o querier .
+        go build -o ${{ github.action_path }}/cmd/fetch/fetch ${{ github.action_path }}/cmd/fetch
 
     - name: Start Pyroscope
       shell: bash
@@ -114,10 +114,10 @@ runs:
           -e PYROSCOPE_SERVICE_NAME="${{ inputs.service-name }}" \
           smoke-app:local
 
-    - name: Run querier
+    - name: Run fetch
       shell: bash
       run: |
-        ${{ github.action_path }}/querier/querier \
+        ${{ github.action_path }}/cmd/fetch/fetch \
           --server http://localhost:4040 \
           --service-name "${{ inputs.service-name }}" \
           --profile-type "${{ inputs.profile-type }}" \

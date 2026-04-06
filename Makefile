@@ -11,7 +11,7 @@ test: up
 		-e PYROSCOPE_SERVICE_NAME=$(SERVICE_NAME) \
 		smoke-app:local
 
-	./querier/querier \
+	./cmd/fetch/fetch \
 		--service-name "$(SERVICE_NAME)" \
 		--term "$(SEARCH_TERM)" \
 		--timeout "$(TIMEOUT)s"
@@ -34,8 +34,8 @@ down:
 .PHONY: build
 build:
 	docker build -f testdata/app/Dockerfile . -t smoke-app
-	cd querier && go build -o querier .
+	go build -o cmd/fetch/fetch ./cmd/fetch
 
 .PHONY: clean
 clean:
-	rm -f querier/querier
+	rm -f cmd/fetch/fetch

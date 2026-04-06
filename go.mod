@@ -1,4 +1,4 @@
-module pyroscope-smoke-querier
+module github.com/grafana/pyroscope-sdk-smoke-action
 
 go 1.23.0
 
