@@ -2,16 +2,16 @@ module github.com/grafana/pyroscope-sdk-smoke-action
 
 go 1.23.0
 
-toolchain go1.23.4
+toolchain go1.26.1
 
 require (
 	connectrpc.com/connect v1.18.0
+	github.com/grafana/pyroscope-go v1.2.8
 	github.com/grafana/pyroscope/api v1.2.0
 )
 
 require (
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/grafana/pyroscope-go v1.2.8 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.9 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/planetscale/vtprotobuf v0.6.0 // indirect

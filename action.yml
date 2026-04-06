@@ -40,12 +40,15 @@ runs:
   steps:
     - name: Validate inputs
       shell: bash
+      env:
+        DOCKERFILE: ${{ inputs.dockerfile }}
+        IMAGE: ${{ inputs.image }}
       run: |
-        if [ -z "${{ inputs.dockerfile }}" ] && [ -z "${{ inputs.image }}" ]; then
+        if [ -z "$DOCKERFILE" ] && [ -z "$IMAGE" ]; then
           echo "error: exactly one of 'dockerfile' or 'image' must be provided (got neither)"
           exit 1
         fi
-        if [ -n "${{ inputs.dockerfile }}" ] && [ -n "${{ inputs.image }}" ]; then
+        if [ -n "$DOCKERFILE" ] && [ -n "$IMAGE" ]; then
           echo "error: exactly one of 'dockerfile' or 'image' must be provided (got both)"
           exit 1
         fi
@@ -92,37 +95,48 @@ runs:
     - name: Build test image
       if: ${{ inputs.dockerfile != '' }}
       shell: bash
+      env:
+        DOCKERFILE: ${{ inputs.dockerfile }}
       run: |
         docker build \
-          -f "${{ github.workspace }}/${{ inputs.dockerfile }}" \
+          -f "${{ github.workspace }}/$DOCKERFILE" \
           "${{ github.workspace }}" \
           -t smoke-app:local
 
     - name: Pull test image
       if: ${{ inputs.image != '' }}
       shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
       run: |
-        docker pull "${{ inputs.image }}"
-        docker tag "${{ inputs.image }}" smoke-app:local
+        docker pull "$IMAGE"
+        docker tag "$IMAGE" smoke-app:local
 
     - name: Run test container
       shell: bash
+      env:
+        SERVICE_NAME: ${{ inputs.service-name }}
       run: |
         docker run -d --name smoke-app \
           --network pyroscope-smoke_default \
           -e PYROSCOPE_SERVER_ADDRESS=http://pyroscope:4040 \
-          -e PYROSCOPE_SERVICE_NAME="${{ inputs.service-name }}" \
+          -e "PYROSCOPE_SERVICE_NAME=$SERVICE_NAME" \
           smoke-app:local
 
     - name: Run fetch
       shell: bash
+      env:
+        SERVICE_NAME: ${{ inputs.service-name }}
+        PROFILE_TYPE: ${{ inputs.profile-type }}
+        SEARCH_TERM: ${{ inputs.search-term }}
+        TIMEOUT: ${{ inputs.timeout-seconds }}
       run: |
         ${{ github.action_path }}/cmd/fetch/fetch \
           --server http://localhost:4040 \
-          --service-name "${{ inputs.service-name }}" \
-          --profile-type "${{ inputs.profile-type }}" \
-          --term "${{ inputs.search-term }}" \
-          --timeout "${{ inputs.timeout-seconds }}s"
+          --service-name "$SERVICE_NAME" \
+          --profile-type "$PROFILE_TYPE" \
+          --term "$SEARCH_TERM" \
+          --timeout "${TIMEOUT}s"
 
     - name: Stop test container
       if: always()
