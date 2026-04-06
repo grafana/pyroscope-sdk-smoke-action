@@ -18,7 +18,7 @@ test: up
 
 .PHONY: up
 up: build
-	docker compose -p pyroscope-smoke -f internal/docker-compose.yml up -d
+	docker compose -p pyroscope-smoke -f docker-compose.yml up -d
 	@for i in $$(seq 1 30); do \
 		curl -sf http://localhost:4040/ready && break; \
 		echo "Waiting for Pyroscope... (attempt $$i)"; \
@@ -29,11 +29,11 @@ up: build
 down:
 	docker stop smoke-app
 	docker rm smoke-app
-	docker compose -p pyroscope-smoke -f internal/docker-compose.yml down --volumes
+	docker compose -p pyroscope-smoke -f docker-compose.yml down --volumes
 
 .PHONY: build
 build:
-	docker build -f testdata/app/Dockerfile . -t smoke-app
+	docker build -f cmd/self/Dockerfile . -t smoke-app
 	go build -o cmd/fetch/fetch ./cmd/fetch
 
 .PHONY: clean

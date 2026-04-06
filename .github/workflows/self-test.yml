@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./
         with:
-          dockerfile: testdata/app/Dockerfile
+          dockerfile: cmd/self/Dockerfile
           service-name: pyroscope-smoke-test
           search-term: smokeTestMagicFunction
           timeout-seconds: '60'
@@ -26,7 +26,7 @@ jobs:
         id: smoke
         continue-on-error: true
         with:
-          dockerfile: testdata/app/Dockerfile
+          dockerfile: cmd/self/Dockerfile
           service-name: pyroscope-smoke-test
           search-term: definitelyNotARealFunction
           timeout-seconds: '60'

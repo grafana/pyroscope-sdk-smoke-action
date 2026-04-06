@@ -1,8 +1,8 @@
 FROM golang:1.23-alpine AS builder
 WORKDIR /app
-COPY testdata/app/go.mod testdata/app/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
-COPY testdata/app/main.go ./
+COPY cmd/self/main.go ./
 RUN CGO_ENABLED=0 go build -o smoke-app .
 
 FROM scratch

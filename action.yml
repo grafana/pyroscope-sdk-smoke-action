@@ -70,7 +70,7 @@ runs:
         PYROSCOPE_VERSION: ${{ inputs.pyroscope-version }}
       run: |
         docker compose -p pyroscope-smoke \
-          -f ${{ github.action_path }}/internal/docker-compose.yml \
+          -f ${{ github.action_path }}/docker-compose.yml \
           up -d
 
     - name: Wait for Pyroscope to be ready
@@ -136,5 +136,5 @@ runs:
       shell: bash
       run: |
         docker compose -p pyroscope-smoke \
-          -f ${{ github.action_path }}/internal/docker-compose.yml \
+          -f ${{ github.action_path }}/docker-compose.yml \
           down --volumes
