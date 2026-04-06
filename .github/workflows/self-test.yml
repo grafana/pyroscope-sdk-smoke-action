@@ -1,0 +1,37 @@
+name: Self-test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  positive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          dockerfile: testdata/app/Dockerfile
+          service-name: pyroscope-smoke-test
+          search-term: smokeTestMagicFunction
+          timeout-seconds: '60'
+
+  negative:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        id: smoke
+        continue-on-error: true
+        with:
+          dockerfile: testdata/app/Dockerfile
+          service-name: pyroscope-smoke-test
+          search-term: definitelyNotARealFunction
+          timeout-seconds: '60'
+      - name: Assert failure
+        if: steps.smoke.outcome != 'failure'
+        run: |
+          echo "Expected action to fail with wrong magic string but it succeeded"
+          exit 1

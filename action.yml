@@ -1,0 +1,140 @@
+name: Pyroscope Smoke Test
+description: >
+  Validates that a profiled application sends profiles to Pyroscope and that
+  a known function name appears in the captured data.
+
+inputs:
+  dockerfile:
+    description: >
+      Relative path to a Dockerfile in the caller's repo (e.g. ./smoke/Dockerfile).
+      Provide this OR image, not both.
+    required: false
+  image:
+    description: >
+      Docker image reference (e.g. myorg/app:latest).
+      Provide this OR dockerfile, not both.
+    required: false
+  search-term:
+    description: String to find in the pprof StringTable (e.g. a function name).
+    required: true
+  service-name:
+    description: >
+      Pyroscope service_name label the profiled app sends.
+      Also injected as PYROSCOPE_SERVICE_NAME into the container.
+    required: true
+  pyroscope-version:
+    description: grafana/pyroscope image tag to use.
+    required: false
+    default: latest
+  timeout-seconds:
+    description: Maximum seconds to poll Pyroscope before failing.
+    required: false
+    default: '60'
+  profile-type:
+    description: Pyroscope profile type ID to query.
+    required: false
+    default: process_cpu:cpu:nanoseconds:cpu:nanoseconds
+
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.dockerfile }}" ] && [ -z "${{ inputs.image }}" ]; then
+          echo "error: exactly one of 'dockerfile' or 'image' must be provided (got neither)"
+          exit 1
+        fi
+        if [ -n "${{ inputs.dockerfile }}" ] && [ -n "${{ inputs.image }}" ]; then
+          echo "error: exactly one of 'dockerfile' or 'image' must be provided (got both)"
+          exit 1
+        fi
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go/build
+        key: ${{ runner.os }}-querier-${{ hashFiles('**/querier/go.sum') }}
+        restore-keys: ${{ runner.os }}-querier-
+
+    - name: Build querier
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}/querier && go build -o querier .
+
+    - name: Start Pyroscope
+      shell: bash
+      env:
+        PYROSCOPE_VERSION: ${{ inputs.pyroscope-version }}
+      run: |
+        docker compose -p pyroscope-smoke \
+          -f ${{ github.action_path }}/internal/docker-compose.yml \
+          up -d
+
+    - name: Wait for Pyroscope to be ready
+      shell: bash
+      run: |
+        echo "Waiting for Pyroscope /ready..."
+        for i in $(seq 1 60); do
+          if curl -sf http://localhost:4040/ready; then
+            echo "Pyroscope is ready"
+            break
+          fi
+          if [ "$i" -ge 60 ]; then
+            echo "error: Pyroscope did not become ready in time"
+            exit 1
+          fi
+          sleep 1
+        done
+
+    - name: Build test image
+      if: ${{ inputs.dockerfile != '' }}
+      shell: bash
+      run: |
+        docker build \
+          -f "${{ github.workspace }}/${{ inputs.dockerfile }}" \
+          "${{ github.workspace }}" \
+          -t smoke-app:local
+
+    - name: Pull test image
+      if: ${{ inputs.image != '' }}
+      shell: bash
+      run: |
+        docker pull "${{ inputs.image }}"
+        docker tag "${{ inputs.image }}" smoke-app:local
+
+    - name: Run test container
+      shell: bash
+      run: |
+        docker run -d --name smoke-app \
+          --network pyroscope-smoke_default \
+          -e PYROSCOPE_SERVER_ADDRESS=http://pyroscope:4040 \
+          -e PYROSCOPE_SERVICE_NAME="${{ inputs.service-name }}" \
+          smoke-app:local
+
+    - name: Run querier
+      shell: bash
+      run: |
+        ${{ github.action_path }}/querier/querier \
+          --server http://localhost:4040 \
+          --service-name "${{ inputs.service-name }}" \
+          --profile-type "${{ inputs.profile-type }}" \
+          --term "${{ inputs.search-term }}" \
+          --timeout "${{ inputs.timeout-seconds }}s"
+
+    - name: Stop test container
+      if: always()
+      shell: bash
+      run: |
+        docker stop smoke-app 2>/dev/null || true
+        docker rm smoke-app 2>/dev/null || true
+
+    - name: Tear down Pyroscope
+      if: always()
+      shell: bash
+      run: |
+        docker compose -p pyroscope-smoke \
+          -f ${{ github.action_path }}/internal/docker-compose.yml \
+          down --volumes

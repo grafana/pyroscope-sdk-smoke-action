@@ -1,0 +1,6 @@
+services:
+  pyroscope:
+    image: grafana/pyroscope:${PYROSCOPE_VERSION:-latest}
+    ports:
+      - "4040:4040"
+    command: ["server"]
