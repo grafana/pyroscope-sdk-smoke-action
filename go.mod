@@ -3,7 +3,7 @@ module github.com/grafana/pyroscope-sdk-smoke-action
 go 1.26.1
 
 require (
-	connectrpc.com/connect v1.19.1
+	connectrpc.com/connect v1.19.2
 	github.com/grafana/pyroscope-go v1.2.8
 	github.com/grafana/pyroscope/api v1.3.2
 )
