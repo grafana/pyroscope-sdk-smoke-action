@@ -10,7 +10,7 @@ require (
 
 require (
 	github.com/google/gnostic v0.7.1 // indirect
-	github.com/google/gnostic-models v0.7.0 // indirect
+	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.9 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
